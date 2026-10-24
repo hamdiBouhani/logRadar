@@ -15,3 +15,14 @@
 sentinel := logradar.New(detectors, nil)
 logger := slog.New(logradar.NewSlogHandler(sentinel))
 logger.Error("database connection timeout")
+
+## Sinks
+
+`logRadar` decouples alert delivery from detection via the `Sink` interface.
+
+```go
+sink := logradar.NewMultiSink(
+    logradar.NewEmailSink(logradar.EmailSinkOptions{ /* ... */ }),
+    // syslogSink, slackSink, ...
+)
+sentinel := logradar.New(detectors, logradar.AsAlertHandler(sink))
