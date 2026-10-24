@@ -1,6 +1,7 @@
 package logradar
 
 import (
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -94,6 +95,38 @@ func (d *SpikeDetector) Detect(entry LogEntry) (bool, string) {
 	if len(d.hits) >= d.threshold {
 		d.hits = d.hits[:0] // reset after firing
 		return true, "spike: errors per window exceeded"
+	}
+	return false, ""
+}
+
+// ─────────────────────────────────────────────────────────────
+// 4. RegexDetector — matches a compiled regular expression.
+// ─────────────────────────────────────────────────────────────
+type RegexDetector struct {
+	re     *regexp.Regexp
+	reason string
+}
+
+// NewRegexDetector compiles the pattern once.
+// It panics on an invalid pattern (fail fast at startup).
+func NewRegexDetector(pattern string) *RegexDetector {
+	return &RegexDetector{
+		re:     regexp.MustCompile(pattern),
+		reason: "regex: " + pattern,
+	}
+}
+
+// NewRegexDetectorNamed is the same but lets you attach a friendly reason.
+func NewRegexDetectorNamed(pattern, reason string) *RegexDetector {
+	return &RegexDetector{
+		re:     regexp.MustCompile(pattern),
+		reason: reason,
+	}
+}
+
+func (d *RegexDetector) Detect(entry LogEntry) (bool, string) {
+	if d.re.MatchString(entry.Message) {
+		return true, d.reason
 	}
 	return false, ""
 }

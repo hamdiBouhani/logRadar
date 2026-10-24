@@ -1,28 +1,36 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
-	logsentinel "github.com/hamdiBouhani/logRadar"
+	logradar "github.com/hamdiBouhani/logRadar"
 )
 
 func main() {
-	sentinel := logsentinel.New(
-		[]logsentinel.Detector{
-			logsentinel.NewLevelDetector("ERROR", "FATAL"),
-			logsentinel.NewKeywordDetector("panic", "timeout"),
-			logsentinel.NewSpikeDetector(3, 5*time.Second),
+	// 1. Build the Sentinel.
+	sentinel := logradar.New(
+		[]logradar.Detector{
+			logradar.NewLevelDetector("ERROR", "FATAL"),
+			logradar.NewRegexDetector(`(?i)panic|segfault|oom`),
+			logradar.NewSpikeDetector(3, 5*time.Second),
 		},
-		func(a logsentinel.Alert) {
+		func(a logradar.Alert) {
 			fmt.Printf("🚨 [%s] %s | %s\n",
 				a.Entry.Level, a.Reason, a.Entry.Message)
 		},
 	)
 
-	sentinel.Info("server started")
-	sentinel.Error("database connection timeout") // keyword + level
-	sentinel.Error("payment failed")
-	sentinel.Error("another error") // 3rd error in window → spike
-	sentinel.Info("recovered")
+	// 2. Wire it into log/slog.
+	logger := slog.New(logradar.NewSlogHandler(sentinel))
+
+	logger.Info("server started")
+	logger.Error("database connection timeout")
+	logger.Error("payment failed")
+	logger.Warn("memory pressure")
+	logger.Error("another error") // 3rd error in window → spike
+	logger.Info("recovered")
+	_ = context.Background()
 }

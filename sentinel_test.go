@@ -34,3 +34,13 @@ func TestSpikeDetector(t *testing.T) {
 		t.Fatal("expected spike")
 	}
 }
+
+func TestRegexDetector(t *testing.T) {
+	d := NewRegexDetector(`(?i)panic|segfault`)
+	if ok, _ := d.Detect(LogEntry{Message: "kernel PANIC"}); !ok {
+		t.Fatal("expected regex match")
+	}
+	if ok, _ := d.Detect(LogEntry{Message: "everything fine"}); ok {
+		t.Fatal("expected no match")
+	}
+}
