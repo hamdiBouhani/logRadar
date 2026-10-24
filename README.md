@@ -30,8 +30,6 @@ logger.Error("database connection timeout") // → alert fired
 
 ---
 
-You can trim this to just the first paragraph + tagline if you want a super-short version for the GitHub "About" field.
-
 ## Built-in Detectors
 
 | Detector | Purpose |
